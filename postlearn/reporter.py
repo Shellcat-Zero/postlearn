@@ -90,7 +90,6 @@ def plot_feature_importance(model, labels, n=10, orient='h'):
     return features
 
 
-
 def confusion_matrix(y_true=None, y_pred=None, labels=None):
     df = (pd.DataFrame(metrics.confusion_matrix(y_true, y_pred),
                        index=labels, columns=labels)
