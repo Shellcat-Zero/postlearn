@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup
 
+import versioneer
+
 with open('README.rst', encoding='utf-8') as readme_file:
     readme = readme_file.read()
 
@@ -16,7 +18,8 @@ test_requirements = [
 
 setup(
     name='postlearn',
-    version='0.1.0',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description="After fitting",
     long_description=readme,
     author="Tom Augspurger",
