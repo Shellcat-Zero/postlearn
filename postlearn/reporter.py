@@ -2,6 +2,9 @@
 '''
 Post-estimation reporting methods.
 '''
+import inspect
+from functools import wraps
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -44,18 +47,69 @@ def plot_roc_curve(y_true, y_score, ax=None):
     '''
     '''
     ax = ax or plt.axes()
-    score = metrics.roc_auc_score(y_true, y_score)
+    auc = metrics.roc_auc_score(y_true, y_score)
     fpr, tpr, _ = metrics.roc_curve(y_true, y_score)
     ax.plot(fpr, tpr)
-    ax.plot([0, 1], [0, 1], 'k--')
-    ax.annotate(score)
-
+    ax.annotate('AUC: {:.2f}'.format(auc), (.8, .2))
+    ax.plot([0, 1], [0, 1], linestyle='--', color='k')
+    return ax
 
 def plot_regularization_path(model):
-    pass
+    raise ValueError
+
+
+def confusion_matrix(y_true=None, y_pred=None, labels=None):
+    df = (pd.DataFrame(metrics.confusion_matrix(y_true, y_pred),
+                       index=labels, columns=labels)
+            .rename_axis("actual")
+            .rename_axis("predicted", axis=1))
+    return df
+
+
+def default_args(**attrs):
+    '''
+    Pull the defaults for a method from `self`.
+
+    Parameters
+    ----------
+    attrs : dict
+        mapping parameter name to attribute name
+        Attributes with the same name need not be included.
+
+    Returns
+    -------
+    deco: new function, injecting the `attrs` into `kwargs`
+
+    Notes
+    -----
+    Only usable with keyword-only arguments.
+
+    Examples
+    --------
+
+    @default_args({'y': 'y_train'})
+    def printer(self, *, y=None, y_pred=None):
+        print('y: ', y)
+        print('y_pred: ', y_pred)
+    '''
+    def deco(func):
+        @wraps(func)
+        def wrapper(self, **kwargs):
+            sig = {k for k in inspect.signature(func).parameters
+                   if k != 'self'}
+            keys = kwargs.keys() | sig
+            for kw in keys:
+                if kwargs.get(kw) is None:
+                    kwargs[kw] = getattr(self, attrs.get(kw, kw), None)
+            return func(self, **kwargs)
+        return wrapper
+    return deco
 
 
 class ClassificationResults:
+    '''
+    A convinience class.
+    '''
 
     def __init__(self, model, X_train, y_train, X_test=None, y_test=None,
                  labels=None):
@@ -64,6 +118,8 @@ class ClassificationResults:
         self.y_train = y_train
         self.X_test = X_test
         self.y_test = y_test
+        self._y_score_train = None
+        self._y_score_test = None
         self._y_pred_train = None
         self._y_pred_test = None
         self._proba_train = None
@@ -97,13 +153,27 @@ class ClassificationResults:
             self._proba_test = self.model.predict_proba(self.X_test)
         return self._proba_test
 
-    def confusion_matrix(self, y=None, y_pred=None):
-        if y is None and y_pred is None:
-            y = self.y_train
-            y_pred = self.y_pred_train
-        df = (pd.DataFrame(metrics.confusion_matrix(y, y_pred),
-                           index=self.labels, columns=self.labels)
-                .rename_axis("actual")
-                .rename_axis("predicted", axis=1))
-        return df
+    @property
+    def y_score_train(self):
+        if self._y_score_train is None:
+            self._y_score_train = self.proba_train[:, 1]
+        return self._y_score_train
+
+    @property
+    def y_score_test(self):
+        if self._y_score_test is None:
+            self._y_score_test = self.proba_test[:, 1]
+        return self._y_score_test
+
+    @default_args(y_true='y_train', y_pred='y_pred_train')
+    def confusion_matrix(self, y_true=None, y_pred=None, labels=None):
+        return confusion_matrix(y_true=y_true,
+                                y_pred=y_pred,
+                                labels=labels)
+
+    @default_args(y_true='y_train', y_score='y_score_train')
+    def plot_roc_curve(self, *, ax=None, y_true=None, y_score=None):
+        '''
+        '''
+        return plot_roc_curve(y_true=y_true, y_score=y_score, ax=ax)
 

@@ -68,3 +68,7 @@ def test_confusion_matrix(result):
     assert cm.index.name == 'actual'
     assert cm.columns.name == 'predicted'
 
+
+def test_plot_roc_curve(result):
+    result.plot_roc_curve(y_true=result.y_train)
+
