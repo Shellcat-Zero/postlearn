@@ -57,6 +57,39 @@ def plot_roc_curve(y_true, y_score, ax=None):
 def plot_regularization_path(model):
     raise ValueError
 
+def _get_feature_importance(model):
+    '''
+    LinearModels: `.coef_`
+    ensemble: `feature_importances_`
+    '''
+    order = ['coef_', 'feature_importances_']
+    for attr in order:
+        if hasattr(model, attr):
+            return getattr(model, attr)
+    else:
+        raise ValueError("The model does not have any of {}".format(order))
+
+
+def _magsort(s):
+    return s[np.abs(s).argsort()]
+
+def plot_feature_importance(model, labels, n=10, orient='h'):
+    if orient.lower().startswith('h'):
+        kind = 'barh'
+    elif orient.lower().startswith('v'):
+        kind = 'bar'
+    else:
+        raise ValueError("`orient` should be 'v' or 'h', got %s instead" %
+                         orient)
+    features = (pd.DataFrame(_get_feature_importance(model),
+                             index=labels)
+                  .squeeze()
+                  .pipe(_magsort)
+                  .tail(n)
+                  .plot(kind=kind))
+    return features
+
+
 
 def confusion_matrix(y_true=None, y_pred=None, labels=None):
     df = (pd.DataFrame(metrics.confusion_matrix(y_true, y_pred),

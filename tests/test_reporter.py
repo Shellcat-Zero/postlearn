@@ -52,11 +52,6 @@ def result(fit_classification_model, X, y_discrete):
     return pl.ClassificationResults(fit_classification_model, X, y_discrete)
 
 
-@pytest.mark.parameterize('kind', [regression_model, regression_pipeline])
-@pytest.fixture
-def model(kind):
-    return kind
-
 @pytest.mark.parametrize("arg", [regression_model, regression_pipeline])
 def test_model_from_pipeline(arg, regression_model):
     result = pl.model_from_pipeline(regression_model)
