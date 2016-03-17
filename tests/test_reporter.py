@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import string
+
 import pytest
 import numpy as np
 from sklearn.linear_model import LinearRegression, LogisticRegression
@@ -66,4 +68,9 @@ def test_confusion_matrix(result):
 
 def test_plot_roc_curve(result):
     result.plot_roc_curve(y_true=result.y_train)
+
+def test_plot_feature_importance(fit_classification_model, X):
+    pl.plot_feature_importance(fit_classification_model,
+                               labels=list(string.ascii_letters[X.shape[1]]))
+    pl.plot_feature_importance(fit_classification_model, None)
 

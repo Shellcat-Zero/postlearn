@@ -194,8 +194,10 @@ def plot_feature_importance(model, labels, n=10, orient='h'):
     else:
         raise ValueError("`orient` should be 'v' or 'h', got %s instead" %
                          orient)
-    features = (pd.DataFrame(_get_feature_importance(model).T,
-                             index=labels)
+    features = _get_feature_importance(model)
+    if labels:
+        features = features.reshape(len(labels), -1)
+    features = (pd.DataFrame(features, index=labels)
                   .squeeze()
                   .pipe(_magsort)
                   .tail(n)
@@ -352,4 +354,7 @@ class ClassificationResults:
         Plot the ROC.
         '''
         return plot_roc_curve(y_true=y_true, y_score=y_score, ax=ax)
+
+    def make_report(self):
+        pass
 
