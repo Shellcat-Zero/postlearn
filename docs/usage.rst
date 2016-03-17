@@ -2,6 +2,6 @@
 Usage
 =====
 
-To use postlearn in a project::
+.. automodule:: postlearn.reporter
+   :members:
 
-    import postlearn

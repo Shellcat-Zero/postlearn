@@ -13,6 +13,17 @@ from sklearn import metrics
 import matplotlib.pyplot as plt
 
 def model_from_pipeline(pipe):
+    '''
+    Extract the model from the last stage of a pipeline.
+
+    Parameters
+    ----------
+    pipe : Pipeline or Estimator
+
+    Returns
+    -------
+    model: Estimator
+    '''
     if isinstance(pipe, Pipeline):
         return pipe[-1][1]
     else:
@@ -21,16 +32,65 @@ def model_from_pipeline(pipe):
 def extract_grid_scores(model):
     '''
     Extract grid scores from a model or pipeline.
+
+    Parameters
+    ----------
+    model : Estimator or Pipeline
+        must end in sklearn.grid_search.GridSearchCV
+
+    Returns
+    -------
+    scores : list
+
+    See Also
+    --------
+    unpack_grid_scores
     '''
     model = model_from_pipeline(model)
     return model.grid_scores_
 
 
 def unpack_grid_scores(model=None):
+    '''
+    Unpack mean grid scores into a DataFrame
+
+    Parameters
+    ----------
+    model : Estimator or Pipeline
+        must end in sklearn.grid_search.GridSearchCV
+
+    Returns
+    -------
+    scores : DataFrame
+
+    Examples
+    --------
+    >>> from sklearn.ensemble import RandomForestClassifier
+    >>> from sklearn import datasets
+    >>> from sklearn.grid_search import GridSearchCV
+    >>> from sklearn.preprocessing import StandardScaler
+    >>> X, y =datasets.make_classification()
+    >>> model = GridSearchCV(RandomForestClassifier(),
+    ...                      param_grid={
+    ...                          'n_estimators': [10, 20, 30],
+    ...                          'max_features': [.1, .5, 1]
+    ...                      })
+    >>> model.fit(X, y)
+    >>> unpack_grid_scores(model)
+       mean_      std_  max_features  n_estimators
+    0   0.88  0.062416           0.1            10
+    1   0.88  0.046536           0.1            20
+    2   0.85  0.095309           0.1            30
+    3   0.88  0.062686           0.5            10
+    4   0.91  0.072044           0.5            20
+    5   0.90  0.073366           0.5            30
+    6   0.78  0.032929           1.0            10
+    7   0.86  0.048224           1.0            20
+    8   0.85  0.072174           1.0            30
+    '''
     scores = extract_grid_scores(model)
     rows = []
     params = sorted(scores[0].parameters)
-
     for row in scores:
         mean = row.mean_validation_score
         std = row.cv_validation_scores.std()
@@ -38,6 +98,21 @@ def unpack_grid_scores(model=None):
     return pd.DataFrame(rows, columns=['mean_', 'std_'] + params)
 
 def plot_grid_scores(model, x, y, hue=None, row=None, col=None, col_wrap=None):
+    '''
+    Wrapper around seaborn.factorplot.
+
+    Parameters
+    ----------
+    model : Pipeline or Estimator
+    x, hue, row, col : str
+        parameters grid searched over
+    y : str
+        the target of interest, probably `'mean_'`
+
+    Returns
+    -------
+    g : seaborn.FacetGrid
+    '''
     scores = unpack_grid_scores(model)
     return sns.factorplot(x=x, y=y, hue=hue, row=row, col=col, data=scores,
                           col_wrap=col_wrap)
@@ -45,6 +120,18 @@ def plot_grid_scores(model, x, y, hue=None, row=None, col=None, col_wrap=None):
 
 def plot_roc_curve(y_true, y_score, ax=None):
     '''
+    Plot the Receiving Operator Characteristic curved, including the
+    Area under the Curve (AUC).
+
+    Parameters
+    ----------
+    y_true : array
+    y_score : array
+    ax : matplotlib.axes, defaults to new axes
+
+    Returns
+    -------
+    ax : matplotlib.axes
     '''
     ax = ax or plt.axes()
     auc = metrics.roc_auc_score(y_true, y_score)
@@ -55,6 +142,9 @@ def plot_roc_curve(y_true, y_score, ax=None):
     return ax
 
 def plot_regularization_path(model):
+    '''
+    Plot the regularization path of coefficients from e.g. a Lasso
+    '''
     raise ValueError
 
 def _get_feature_importance(model):
@@ -71,9 +161,31 @@ def _get_feature_importance(model):
 
 
 def _magsort(s):
+    '''Sort a Series by magnitude, ignoring direction (sign).'''
     return s[np.abs(s).argsort()]
 
 def plot_feature_importance(model, labels, n=10, orient='h'):
+    '''
+    Bar plot of feature importance.
+
+    Parameters
+    ----------
+    model : Pipeline or Estimator
+    labels : list-like
+    n : int
+        number of features to include
+    orient : {'h', 'v'}
+        horizontal or vertical barplot
+
+    Returns
+    -------
+    ax : matplotlib.axes
+
+    Notes
+    -----
+    Works with Regression, coefs_, or ensembes with feature_importances_
+
+    '''
     model = model_from_pipeline(model)
     if orient.lower().startswith('h'):
         kind = 'barh'
@@ -82,7 +194,7 @@ def plot_feature_importance(model, labels, n=10, orient='h'):
     else:
         raise ValueError("`orient` should be 'v' or 'h', got %s instead" %
                          orient)
-    features = (pd.DataFrame(_get_feature_importance(model),
+    features = (pd.DataFrame(_get_feature_importance(model).T,
                              index=labels)
                   .squeeze()
                   .pipe(_magsort)
@@ -92,6 +204,19 @@ def plot_feature_importance(model, labels, n=10, orient='h'):
 
 
 def confusion_matrix(y_true=None, y_pred=None, labels=None):
+    '''
+    Dataframe of confusion matrix. Rows are actual, and columns are predicted.
+
+    Parameters
+    ----------
+    y_true : array
+    y_pred : array
+    labels : list-like
+
+    Returns
+    -------
+    confusion_matrix : DataFrame
+    '''
     df = (pd.DataFrame(metrics.confusion_matrix(y_true, y_pred),
                        index=labels, columns=labels)
             .rename_axis("actual")
@@ -141,11 +266,22 @@ def default_args(**attrs):
 
 class ClassificationResults:
     '''
-    A convinience class.
+    A convinience class, wrapping all the reporting methods and
+    caching intermediate calculations.
     '''
 
     def __init__(self, model, X_train, y_train, X_test=None, y_test=None,
                  labels=None):
+        '''
+        Parameters
+        ----------
+        model : Pipeline or Estimator
+        X_train : np.array
+        y_train : np.array
+        X_test : np.array
+        y_test : np.array
+        labels : list of str
+        '''
         self.model = model
         self.X_train = X_train
         self.y_train = y_train
@@ -164,36 +300,42 @@ class ClassificationResults:
 
     @property
     def y_pred_train(self):
+        'Predicted values for the training set'
         if self._y_pred_train is None:
             self._y_pred_train = self.model.predict(self.X_train)
         return self._y_pred_train
 
     @property
     def y_pred_test(self):
+        'Predicted values for the test set'
         if self._y_pred_test is None:
             self._y_pred_test = self.model.predict(self.X_test)
         return self._y_pred_test
 
     @property
     def proba_train(self):
+        'Predicted probabilities for the training set'
         if self._proba_train is None:
             self._proba_train = self.model.predict_proba(self.X_train)
         return self._proba_train
 
     @property
     def proba_test(self):
+        'Predicted probabilities for the test set'
         if self._proba_test is None:
             self._proba_test = self.model.predict_proba(self.X_test)
         return self._proba_test
 
     @property
     def y_score_train(self):
+        'Predicted positive score (column 1) for the training set'
         if self._y_score_train is None:
             self._y_score_train = self.proba_train[:, 1]
         return self._y_score_train
 
     @property
     def y_score_test(self):
+        'Predicted positive score (column 1) for the test set'
         if self._y_score_test is None:
             self._y_score_test = self.proba_test[:, 1]
         return self._y_score_test
@@ -207,6 +349,7 @@ class ClassificationResults:
     @default_args(y_true='y_train', y_score='y_score_train')
     def plot_roc_curve(self, *, ax=None, y_true=None, y_score=None):
         '''
+        Plot the ROC.
         '''
         return plot_roc_curve(y_true=y_true, y_score=y_score, ax=ax)
 
