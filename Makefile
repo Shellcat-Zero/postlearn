@@ -1,16 +1,4 @@
-.PHONY: clean-pyc clean-build docs clean
-define BROWSER_PYSCRIPT
-import os, webbrowser, sys
-try:
-	from urllib import pathname2url
-except:
-	from urllib.request import pathname2url
-
-webbrowser.open("file://" + pathname2url(os.path.abspath(sys.argv[1])))
-endef
-export BROWSER_PYSCRIPT
-BROWSER := python -c "$$BROWSER_PYSCRIPT"
-
+.PHONY: clean-pyc clean-build docs clean wheels
 help:
 	@echo "clean - remove all build, test, coverage and Python artifacts"
 	@echo "clean-build - remove build artifacts"
@@ -58,7 +46,6 @@ coverage:
 	coverage run --source postlearn setup.py test
 	coverage report -m
 	coverage html
-	$(BROWSER) htmlcov/index.html
 
 docs:
 	rm -f docs/postlearn.rst
@@ -66,10 +53,6 @@ docs:
 	sphinx-apidoc -o docs/ postlearn
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
-	$(BROWSER) docs/_build/html/index.html
-
-servedocs: docs
-	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 release: clean
 	python setup.py sdist upload
@@ -82,3 +65,6 @@ dist: clean
 
 install: clean
 	python setup.py install
+
+wheel: clean
+	pip wheel --no-deps --wheel-dir=wheels .

@@ -74,6 +74,7 @@ def _magsort(s):
     return s[np.abs(s).argsort()]
 
 def plot_feature_importance(model, labels, n=10, orient='h'):
+    model = model_from_pipeline(model)
     if orient.lower().startswith('h'):
         kind = 'barh'
     elif orient.lower().startswith('v'):
