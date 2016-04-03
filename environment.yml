@@ -1,12 +1,13 @@
-name: tst
+name: env
 dependencies:
-- matplotlib=1.5.1=np110py35_0
-- nomkl=1.0=0
-- numpy=1.10.4=py35_nomkl_0
-- pandas=0.18.0=np110py35_0
-- pip=8.1.1=py35_1
-- python=3.5.1=0
-- scikit-learn=0.17.1=np110py35_nomkl_0
-- scipy=0.17.0=np110py35_nomkl_0
-- seaborn=0.7.0=py35_0
+- python
+- nomkl=1.0
+- matplotlib=1.5.1
+- numpy=1.10.4
+- pandas=0.18.0
+- pip=8.1.1
+- python=3.5.1
+- scikit-learn=0.17.1
+- scipy=0.17.0
+- seaborn=0.7.0
 
