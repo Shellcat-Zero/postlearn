@@ -21,6 +21,27 @@ except ImportError:
     has_widgets = False
 
 
+def extract_grid_scores(model):
+    '''
+    Extract grid scores from a model or pipeline.
+
+    Parameters
+    ----------
+    model : Estimator or Pipeline
+        must end in sklearn.grid_search.GridSearchCV
+
+    Returns
+    -------
+    scores : list
+
+    See Also
+    --------
+    unpack_grid_scores
+    '''
+    model = utils.model_from_pipeline(model)
+    return model.grid_scores_
+
+
 def unpack_grid_scores(model=None):
     '''
     Unpack mean grid scores into a DataFrame
