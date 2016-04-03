@@ -3,8 +3,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to postlearn's documentation!
-======================================
+Postlearn
+=========
+
+A collection of useful post-estimation diagnostics for scikit-learn
+models.
 
 Contents:
 
@@ -12,7 +15,6 @@ Contents:
    :maxdepth: 2
 
    readme
-   installation
    usage
 
 Indices and tables

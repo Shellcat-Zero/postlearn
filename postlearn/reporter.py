@@ -21,27 +21,6 @@ except ImportError:
     has_widgets = False
 
 
-def extract_grid_scores(model):
-    '''
-    Extract grid scores from a model or pipeline.
-
-    Parameters
-    ----------
-    model : Estimator or Pipeline
-        must end in sklearn.grid_search.GridSearchCV
-
-    Returns
-    -------
-    scores : list
-
-    See Also
-    --------
-    unpack_grid_scores
-    '''
-    model = utils.model_from_pipeline(model)
-    return model.grid_scores_
-
-
 def unpack_grid_scores(model=None):
     '''
     Unpack mean grid scores into a DataFrame
@@ -79,8 +58,13 @@ def unpack_grid_scores(model=None):
     6   0.78  0.032929           1.0            10
     7   0.86  0.048224           1.0            20
     8   0.85  0.072174           1.0            30
+
+    See Also
+    --------
+    plot_grid_scores
     '''
-    scores = extract_grid_scores(model)
+    model = utils.model_from_pipeline(model)
+    scores = model.grid_scores_
     rows = []
     params = sorted(scores[0].parameters)
     for row in scores:
@@ -90,7 +74,7 @@ def unpack_grid_scores(model=None):
     return pd.DataFrame(rows, columns=['mean_', 'std_'] + params)
 
 
-def plot_grid_scores(model, x, y, hue=None, row=None, col=None, col_wrap=None,
+def plot_grid_scores(model, x, y=None, hue=None, row=None, col=None, col_wrap=None,
                      **kwargs):
     '''
     Wrapper around seaborn.factorplot.
@@ -101,13 +85,14 @@ def plot_grid_scores(model, x, y, hue=None, row=None, col=None, col_wrap=None,
     x, hue, row, col : str
         parameters grid searched over
     y : str
-        the target of interest, probably `'mean_'`
+        the target of interest, default `'mean_'`
 
     Returns
     -------
     g : seaborn.FacetGrid
     '''
     scores = unpack_grid_scores(model)
+    y = y or 'mean_'
     return sns.factorplot(x=x, y=y, hue=hue, row=row, col=col, data=scores,
                           col_wrap=col_wrap, **kwargs)
 
@@ -115,7 +100,7 @@ def plot_grid_scores(model, x, y, hue=None, row=None, col=None, col_wrap=None,
 def plot_roc_curve(y_true, y_score, ax=None):
     '''
     Plot the Receiving Operator Characteristic curved, including the
-    Area under the Curve (AUC).
+    Area under the Curve (AUC) score.
 
     Parameters
     ----------
@@ -146,7 +131,18 @@ def plot_regularization_path(model):
 def plot_learning_curve(estimator, X, y, train_sizes=np.linspace(.1, 1.0, 5),
                         cv=None, n_jobs=1, ax=None):
     '''
+    Plot the learning curve for `estimator`.
 
+    Parameters
+    ----------
+    estimator : sklearn.Estimator
+    X : array-like
+    y : array-like
+    train_sizes : array-like
+        list of floats between 0 and 1
+    cv : int
+    n_jobs : int
+    ax : matplotlib.axes
     '''
     # http://scikit-learn.org/stable/auto_examples/model_selection/plot_learning_curve.html
     if ax is None:
@@ -298,6 +294,9 @@ def default_args(**attrs):
 
 
 class GridSearchMixin:
+    '''
+    Helper methods appropriate for estimators fit with a GridSearch.
+    '''
 
     def plot_grid_scores(self, x, hue=None, row=None, col=None, col_wrap=None,
                          **kwargs):
