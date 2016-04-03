@@ -438,7 +438,8 @@ class ClassificationResults(GridSearchMixin):
 
     @default_args(X='X_train', y='y_train')
     def plot_learning_curve(self, *, X=None, y=None,
-                            train_sizes=None, cv=None,
+                            train_sizes=np.linspace(.1, 1.0, 5),
+                            cv=None,
                             n_jobs=1,
                             ax=None):
         return plot_learning_curve(self.model, X=X, y=y, cv=cv,
