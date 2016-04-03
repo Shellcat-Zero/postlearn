@@ -426,6 +426,14 @@ class ClassificationResults(GridSearchMixin):
                                 y_pred=y_pred,
                                 labels=labels)
 
+    @default_args(y_true='y_train', y_pred='y_pred_train')
+    def accuracy_score(self, y_true=None, y_pred=None, labels=None,
+                       normalize=True, sample_weight=None):
+        return metrics.accuracy_score(y_true=y_true,
+                                      y_pred=y_pred,
+                                      normalize=normalize,
+                                      sample_weight=sample_weight)
+
     @default_args(y_true='y_train', y_score='y_score_train')
     def plot_roc_curve(self, *, ax=None, y_true=None, y_score=None):
         '''
