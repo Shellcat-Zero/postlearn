@@ -10,7 +10,15 @@ import pandas as pd
 import seaborn as sns
 from sklearn.pipeline import Pipeline
 from sklearn import metrics
+from sklearn.learning_curve import learning_curve
 import matplotlib.pyplot as plt
+
+try:
+    from ipywidgets import interact
+    has_widgets = True
+except ImportError:
+    has_widgets = False
+
 
 def model_from_pipeline(pipe):
     '''
@@ -22,12 +30,14 @@ def model_from_pipeline(pipe):
 
     Returns
     -------
+
     model: Estimator
     '''
     if isinstance(pipe, Pipeline):
         return pipe[-1][1]
     else:
         return pipe
+
 
 def extract_grid_scores(model):
     '''
@@ -97,7 +107,9 @@ def unpack_grid_scores(model=None):
         rows.append([mean, std] + [row.parameters[k] for k in params])
     return pd.DataFrame(rows, columns=['mean_', 'std_'] + params)
 
-def plot_grid_scores(model, x, y, hue=None, row=None, col=None, col_wrap=None):
+
+def plot_grid_scores(model, x, y, hue=None, row=None, col=None, col_wrap=None,
+                     **kwargs):
     '''
     Wrapper around seaborn.factorplot.
 
@@ -115,7 +127,7 @@ def plot_grid_scores(model, x, y, hue=None, row=None, col=None, col_wrap=None):
     '''
     scores = unpack_grid_scores(model)
     return sns.factorplot(x=x, y=y, hue=hue, row=row, col=col, data=scores,
-                          col_wrap=col_wrap)
+                          col_wrap=col_wrap, **kwargs)
 
 
 def plot_roc_curve(y_true, y_score, ax=None):
@@ -141,11 +153,46 @@ def plot_roc_curve(y_true, y_score, ax=None):
     ax.plot([0, 1], [0, 1], linestyle='--', color='k')
     return ax
 
+
 def plot_regularization_path(model):
     '''
     Plot the regularization path of coefficients from e.g. a Lasso
     '''
     raise ValueError
+
+
+def plot_learning_curve(estimator, X, y, train_sizes=np.linspace(.1, 1.0, 5),
+                        cv=None, n_jobs=1, ax=None):
+    '''
+
+    '''
+    # http://scikit-learn.org/stable/auto_examples/model_selection/plot_learning_curve.html
+    if ax is None:
+        fig, ax = plt.subplots()
+    ax.set_xlabel("Training examples")
+    ax.set_ylabel("Score")
+    train_sizes, train_scores, test_scores = learning_curve(
+        estimator, X, y, cv=cv, n_jobs=n_jobs, train_sizes=train_sizes
+    )
+    train_scores_mean = np.mean(train_scores, axis=1)
+    train_scores_std = np.std(train_scores, axis=1)
+    test_scores_mean = np.mean(test_scores, axis=1)
+    test_scores_std = np.std(test_scores, axis=1)
+    plt.grid()
+
+    plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
+                     train_scores_mean + train_scores_std, alpha=0.1,
+                     color="r")
+    plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
+                     test_scores_mean + test_scores_std, alpha=0.1, color="g")
+    plt.plot(train_sizes, train_scores_mean, 'o-', color="r",
+             label="Training score")
+    plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
+             label="Cross-validation score")
+
+    plt.legend(loc="best")
+    return ax
+
 
 def _get_feature_importance(model):
     '''
@@ -163,6 +210,7 @@ def _get_feature_importance(model):
 def _magsort(s):
     '''Sort a Series by magnitude, ignoring direction (sign).'''
     return s[np.abs(s).argsort()]
+
 
 def plot_feature_importance(model, labels, n=10, orient='h'):
     '''
@@ -255,18 +303,46 @@ def default_args(**attrs):
     def deco(func):
         @wraps(func)
         def wrapper(self, **kwargs):
-            sig = {k for k in inspect.signature(func).parameters
-                   if k != 'self'}
-            keys = kwargs.keys() | sig
+            sig = inspect.signature(func)
+            keys = {k for k in sig.parameters if k != 'self'}
             for kw in keys:
+                # TODO: Broken
                 if kwargs.get(kw) is None:
-                    kwargs[kw] = getattr(self, attrs.get(kw, kw), None)
+                    kwargs[kw] = getattr(self, attrs.get(kw, kw),
+                                         sig.parameters[kw].default)
             return func(self, **kwargs)
         return wrapper
     return deco
 
 
-class ClassificationResults:
+class GridSearchMixin:
+
+    def plot_grid_scores(self, x, hue=None, row=None, col=None, col_wrap=None,
+                         **kwargs):
+        def none_if_none(x):
+            return None if x == 'None' else x
+
+        if has_widgets:
+            choices = ['None'] + list(unpack_grid_scores(self.model)
+                                      .columns.drop(['mean_', 'std_']))
+
+            @interact(x=choices, hue=choices, row=choices, col=choices)
+            def wrapper(x=x, hue=None, row=None, col=None):
+                return plot_grid_scores(self.model,
+                                        none_if_none(x),
+                                        'mean_',
+                                        hue=none_if_none(hue),
+                                        row=none_if_none(row),
+                                        col=none_if_none(col),
+                                        col_wrap=none_if_none(col_wrap),
+                                        **kwargs)
+            return wrapper
+        else:
+            return plot_grid_scores(self.model, x, 'mean_', hue=hue, row=row,
+                                    col=col, col_wrap=col_wrap, **kwargs)
+
+
+class ClassificationResults(GridSearchMixin):
     '''
     A convinience class, wrapping all the reporting methods and
     caching intermediate calculations.
@@ -357,4 +433,14 @@ class ClassificationResults:
 
     def make_report(self):
         pass
+
+    @default_args(X='X_train', y='y_train')
+    def plot_learning_curve(self, *, X=None, y=None,
+                            train_sizes=None, cv=None,
+                            n_jobs=1,
+                            ax=None):
+        return plot_learning_curve(self.model, X=X, y=y, cv=cv,
+                                   train_sizes=train_sizes,
+                                   n_jobs=n_jobs,
+                                   ax=ax)
 
