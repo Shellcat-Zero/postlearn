@@ -56,7 +56,7 @@ def result(fit_classification_model, X, y_discrete):
 
 @pytest.mark.parametrize("arg", [regression_model, regression_pipeline])
 def test_model_from_pipeline(arg, regression_model):
-    result = pl.model_from_pipeline(regression_model)
+    result = pl.utils.model_from_pipeline(regression_model)
     assert result == regression_model
 
 
