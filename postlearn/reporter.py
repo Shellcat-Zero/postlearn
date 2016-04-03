@@ -8,35 +8,17 @@ from functools import wraps
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from sklearn.pipeline import Pipeline
 from sklearn import metrics
 from sklearn.learning_curve import learning_curve
 import matplotlib.pyplot as plt
+
+from . import utils
 
 try:
     from ipywidgets import interact
     has_widgets = True
 except ImportError:
     has_widgets = False
-
-
-def model_from_pipeline(pipe):
-    '''
-    Extract the model from the last stage of a pipeline.
-
-    Parameters
-    ----------
-    pipe : Pipeline or Estimator
-
-    Returns
-    -------
-
-    model: Estimator
-    '''
-    if isinstance(pipe, Pipeline):
-        return pipe[-1][1]
-    else:
-        return pipe
 
 
 def extract_grid_scores(model):
@@ -56,7 +38,7 @@ def extract_grid_scores(model):
     --------
     unpack_grid_scores
     '''
-    model = model_from_pipeline(model)
+    model = utils.model_from_pipeline(model)
     return model.grid_scores_
 
 
@@ -234,7 +216,7 @@ def plot_feature_importance(model, labels, n=10, orient='h'):
     Works with Regression, coefs_, or ensembes with feature_importances_
 
     '''
-    model = model_from_pipeline(model)
+    model = utils.model_from_pipeline(model)
     if orient.lower().startswith('h'):
         kind = 'barh'
     elif orient.lower().startswith('v'):
