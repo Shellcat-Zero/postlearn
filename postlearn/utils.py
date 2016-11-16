@@ -1,4 +1,8 @@
+import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 from sklearn.pipeline import Pipeline
+
 
 def model_from_pipeline(pipe):
     '''
@@ -35,4 +39,4 @@ def rediscretize_cmap(N, base_cmap=None):
     else:
         colors = base(np.arange(0, base.N, step))
     name = base.name + str(N)
-    return mp.colors.ListedColormap(colors, name, N)
+    return mpl.colors.ListedColormap(colors, name, N)
