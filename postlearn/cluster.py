@@ -9,7 +9,7 @@ from postlearn.utils import rediscretize_cmap
 
 def plot_decision_boundry(data, pipe, reducer=PCA):
     fig, ax = plt.subplots(figsize=(16, 12))
-    reducer = reducer()
+    reducer = reducer(n_components=2)
 
     if isinstance(pipe, Pipeline):
         prepipe = Pipeline(pipe.steps[:-1])
