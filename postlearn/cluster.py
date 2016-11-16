@@ -31,7 +31,7 @@ def plot_decision_boundry(data, pipe, reducer=PCA):
 
     cmap = rediscretize_cmap(n_clusters, 'Set1')
     sc = ax.scatter(mu_reduced[:, 0], mu_reduced[:, 1],
-                    c=np.arange(km.n_clusters), cmap=cmap,
+                    c=np.arange(n_clusters), cmap=cmap,
                     s=300)
     plt.colorbar(sc, ticks=np.arange(n_clusters))
     ax.scatter(X_reduced[:, 0], X_reduced[:, 1], c=km.labels_,
