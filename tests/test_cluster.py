@@ -26,6 +26,7 @@ class TestPlotDecisionBoundry:
     @pytest.mark.parametrize('method', [
         cluster.KMeans, cluster.AffinityPropagation,
         cluster.AgglomerativeClustering, cluster.MeanShift,
+        cluster.SpectralClustering,
     ])
     def test_smoke(self, data_labels, method):
         data, _ = data_labels
