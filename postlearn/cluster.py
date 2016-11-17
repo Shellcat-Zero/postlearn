@@ -34,7 +34,8 @@ def plot_decision_boundry(data, pipe, reducer=PCA):
 
     X_reduced = reducer.fit_transform(data_)
 
-    cluster_centers = getattr(km, 'cluster_centers_', compute_centers(km, data))
+    cluster_centers = getattr(km, 'cluster_centers_',
+                              compute_centers(km, data_))
 
     mu_reduced = reducer.transform(cluster_centers)
     n_clusters = len(np.unique(km.labels_))
