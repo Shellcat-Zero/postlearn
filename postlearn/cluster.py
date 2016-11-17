@@ -7,6 +7,14 @@ from sklearn.decomposition import PCA
 from postlearn.utils import rediscretize_cmap
 
 
+def compute_centers(km, X):
+    centers = []
+    for label in sorted(set(km.labels_)):
+        centers.append(X[km.labels_ == label].mean(0))
+
+    return np.array(centers)
+
+
 def plot_decision_boundry(data, pipe, reducer=PCA):
     fig, ax = plt.subplots(figsize=(16, 12))
     reducer = reducer(n_components=2)
@@ -25,7 +33,10 @@ def plot_decision_boundry(data, pipe, reducer=PCA):
         data_ = data
 
     X_reduced = reducer.fit_transform(data_)
-    mu_reduced = reducer.transform(km.cluster_centers_)
+
+    cluster_centers = getattr(km, 'cluster_centers_', compute_centers(km, data))
+
+    mu_reduced = reducer.transform(cluster_centers)
     n_clusters = len(np.unique(km.labels_))
     tree = KDTree(mu_reduced)
 
