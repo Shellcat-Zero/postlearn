@@ -1,6 +1,7 @@
 import pytest
 from sklearn.datasets import make_blobs
 from sklearn import cluster
+from sklearn.decomposition import PCA
 
 from postlearn.cluster import compute_centers, plot_decision_boundry
 
@@ -33,3 +34,10 @@ class TestPlotDecisionBoundry:
         est = method()
         est.fit(data)
         plot_decision_boundry(data, est)
+
+    def test_reducer_instance3(self, data_labels):
+        data, _ = data_labels
+        red = PCA(n_components=2)
+        est = cluster.KMeans()
+        est.fit(data)
+        plot_decision_boundry(data, est, reducer=red)

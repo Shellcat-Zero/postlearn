@@ -17,7 +17,9 @@ def compute_centers(km, X):
 
 def plot_decision_boundry(data, pipe, reducer=PCA):
     fig, ax = plt.subplots(figsize=(16, 12))
-    reducer = reducer(n_components=2)
+    if callable(reducer):
+        reducer = reducer(n_components=2)
+    # else assume it's already been instantiated...
 
     if isinstance(pipe, Pipeline) and len(pipe.steps) > 1:
         prepipe = Pipeline(pipe.steps[:-1])
