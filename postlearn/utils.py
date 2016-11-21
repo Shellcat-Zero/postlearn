@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from sklearn.pipeline import Pipeline
 
 
@@ -40,3 +41,14 @@ def rediscretize_cmap(N, base_cmap=None):
         colors = base(np.arange(0, base.N, step))
     name = base.name + str(N)
     return mpl.colors.ListedColormap(colors, name, N)
+
+
+def colorbar_index(ncolors, cmap):
+    # http://stackoverflow.com/a/18707445/1889400
+    mappable = cm.ScalarMappable(cmap=cmap)
+    mappable.set_array([])
+    mappable.set_clim(-0.5, ncolors + 0.5)
+    colorbar = plt.colorbar(mappable)
+    colorbar.set_ticks(np.linspace(0, ncolors, ncolors))
+    colorbar.set_ticklabels(range(ncolors))
+

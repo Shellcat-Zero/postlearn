@@ -4,7 +4,7 @@ from sklearn.neighbors import KDTree
 from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
 
-from postlearn.utils import rediscretize_cmap
+from postlearn.utils import rediscretize_cmap, colorbar_index
 
 
 def compute_centers(km, X):
@@ -42,10 +42,11 @@ def plot_decision_boundry(data, pipe, reducer=PCA):
     tree = KDTree(mu_reduced)
 
     cmap = rediscretize_cmap(n_clusters, 'Set1')
-    sc = ax.scatter(mu_reduced[:, 0], mu_reduced[:, 1],
-                    c=np.arange(n_clusters), cmap=cmap,
-                    s=300)
-    plt.colorbar(sc, ticks=np.arange(n_clusters))
+    ax.scatter(mu_reduced[:, 0], mu_reduced[:, 1],
+               c=np.arange(n_clusters), cmap=cmap,
+               s=300)
+    colorbar_index(ncolors=n_clusters, cmap=cmap)
+
     ax.scatter(X_reduced[:, 0], X_reduced[:, 1], c=km.labels_,
                cmap=cmap, alpha=.95)
 
