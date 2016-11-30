@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from sklearn import metrics
-from sklearn.learning_curve import learning_curve
+from sklearn.model_selection import learning_curve
 import matplotlib.pyplot as plt
 
 from . import utils
@@ -28,7 +28,7 @@ def extract_grid_scores(model):
     Parameters
     ----------
     model : Estimator or Pipeline
-        must end in sklearn.grid_search.GridSearchCV
+        must end in sklearn.model_selection.GridSearchCV
 
     Returns
     -------
@@ -49,7 +49,7 @@ def unpack_grid_scores(model=None):
     Parameters
     ----------
     model : Estimator or Pipeline
-        must end in sklearn.grid_search.GridSearchCV
+        must end in sklearn.model_selection.GridSearchCV
 
     Returns
     -------
@@ -59,7 +59,7 @@ def unpack_grid_scores(model=None):
     --------
     >>> from sklearn.ensemble import RandomForestClassifier
     >>> from sklearn import datasets
-    >>> from sklearn.grid_search import GridSearchCV
+    >>> from sklearn.model_selection import GridSearchCV
     >>> from sklearn.preprocessing import StandardScaler
     >>> X, y =datasets.make_classification()
     >>> model = GridSearchCV(RandomForestClassifier(),
